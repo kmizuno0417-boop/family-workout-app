@@ -151,6 +151,9 @@ def index():
             "reps": reps
         })
 
+
+    today_str = date.today().strftime("%Y-%m-%d")
+
     # ここまで関数内にまとめる
     return render_template(
         "index.html",
@@ -166,7 +169,8 @@ def index():
         member_stats=member_stats,
         member_exercise_stats=json.dumps(member_exercise_stats),
         exercise_day_details=json.dumps(exercise_day_details),
-        ranking_by_exercise=ranking_by_exercise
+        ranking_by_exercise=ranking_by_exercise,
+        current_date=today_str
     )
 
 @app.route("/add_member",methods=["POST"])

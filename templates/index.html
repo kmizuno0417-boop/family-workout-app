@@ -46,18 +46,20 @@ button.delete{ background:#e74c3c;}
 </div>
 <div class="calendar">
 <div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div>
+{% set today_str = current_date|default("") %}
 {% for week in calendar %}
   {% for day in week %}
     {% if day==0 %}
       <div class="empty"></div>
     {% else %}
       {% set d="%04d-%02d-%02d"|format(year,month,day) %}
-      <div class="day">
+      {% set is_today = (d == today_str) %}
+      <div class="day" style="background: {% if is_today %}#fcefa1{% else %}white{% endif %};">
           <div class="daynum" onclick="openModal('{{d}}')">{{day}}</div>
           {% if workouts.get(d) %}
               {% for w in workouts[d] %}
                   <div class="log" 
-                      style="background:{{ member_colors[w.member] }};"
+                      style="background:{{ member_colors[w.member] }}; color:white;"
                       onclick="openModal('{{d}}','{{w.member_id}}','{{w.exercise_id}}','{{w.reps}}','{{w.id}}')">
                       {{ w.member }}<br>{{ w.exercise }} {{ w.reps }}
                   </div>
@@ -72,14 +74,35 @@ button.delete{ background:#e74c3c;}
 </div>
 
 
-
 <!-- 総合ランキング -->
 <div class="card">
 <h3>🏆 今月総合ランキング</h3>
+
 {% for r in ranking %}
-<div>{{loop.index}}位 {{r[0]}} : {{r[1]}}</div>
-{% endfor %}
+<div>
+
+{% if loop.index == 1 %}
+🥇
+{% elif loop.index == 2 %}
+🥈
+{% elif loop.index == 3 %}
+🥉
+{% else %}
+{{loop.index}}位
+{% endif %}
+
+<span style="color:{{member_colors[r[0]]}};">
+{{r[0]}}
+</span>
+
+ : {{r[1]}}
+
 </div>
+{% endfor %}
+
+</div>
+
+
 
 <!-- 種目別ランキング -->
 <div class="card">
@@ -97,12 +120,33 @@ button.delete{ background:#e74c3c;}
 {% endfor %}
 
 {% for exercise, members_list in grouped.items() %}
-    <b>{{ exercise }}</b><br>
-    {% for m in members_list %}
-        &nbsp;&nbsp;{{ m.member }} : {{ m.reps }}<br>
-    {% endfor %}
-    <hr style="margin:6px 0;">
+
+<b>{{ exercise }}</b><br>
+
+{% for m in members_list %}
+
+{% if loop.index == 1 %}
+🥇
+{% elif loop.index == 2 %}
+🥈
+{% elif loop.index == 3 %}
+🥉
+{% else %}
+{{loop.index}}位
+{% endif %}
+
+<span style="color:{{member_colors[m.member]}};">
+{{ m.member }}
+</span>
+
+ : {{ m.reps }}<br>
+
 {% endfor %}
+
+<hr style="margin:6px 0;">
+
+{% endfor %}
+
 </div>
 
 <!-- 種目グラフ -->
