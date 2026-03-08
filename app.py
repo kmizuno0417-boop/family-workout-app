@@ -167,6 +167,28 @@ def index():
     GROUP BY m.name
     """,(f"{year}-{month:02d}",))
 
+    # 登山システム（1回 = 1m）
+    FUJI_HEIGHT = 3776
+
+    mountain_progress = []
+
+    for m in member_stats:
+
+        name = m[0]
+        total = m[1] or 0
+
+        height = total
+        progress = min(int((height / FUJI_HEIGHT) * 100),100)
+        remaining = max(FUJI_HEIGHT - height,0)
+
+        mountain_progress.append({
+            "name": name,
+            "height": height,
+            "progress": progress,
+            "remaining": remaining,
+            "goal": FUJI_HEIGHT
+        })
+
 
     # 種目別メンバー統計
     member_exercise_stats={}
@@ -242,7 +264,8 @@ def index():
         ranking_by_exercise=ranking_by_exercise,
         current_date=today_str,
         member_streaks=member_streaks,
-        streak_ranking=streak_ranking
+        streak_ranking=streak_ranking,
+        mountain_progress=mountain_progress
     )
 
 

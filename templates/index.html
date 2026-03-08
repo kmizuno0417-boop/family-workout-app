@@ -19,6 +19,28 @@ button.delete{ background:#e74c3c;}
 .empty{background:transparent;}
 .modal{ position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; z-index:1000;}
 .modal-content{ background:white; padding:20px; border-radius:10px; width:90%; max-height:90%; overflow:auto;}
+.mountain-bar{
+position:relative;
+height:30px;
+background:#e0e0e0;
+border-radius:20px;
+overflow:hidden;
+margin-top:4px;
+}
+
+.mountain-fill{
+position:absolute;
+height:100%;
+background:linear-gradient(90deg,#27ae60,#2ecc71);
+}
+
+.fuji{
+position:absolute;
+right:0;
+top:-20px;
+height:60px;
+opacity:0.9;
+}
 </style>
 </head>
 <body>
@@ -179,6 +201,46 @@ button.delete{ background:#e74c3c;}
 </span>
 
  : {{ s.streak }}日
+
+</div>
+
+{% endfor %}
+
+</div>
+
+<!-- 登山チャレンジ -->
+<div class="card">
+<h3>🗻 富士山チャレンジ（1回＝1m）</h3>
+
+{% for m in mountain_progress %}
+
+<div style="margin-bottom:14px">
+
+<b style="color:{{member_colors[m.name]}}">
+{{m.name}}
+</b>
+
+{{m.height}} m
+
+<div class="mountain-bar">
+
+<div class="mountain-fill"
+style="width:{{m.progress}}%">
+</div>
+
+<img class="fuji" src="https://upload.wikimedia.org/wikipedia/commons/1/12/Mount_Fuji_from_Hakone.jpg">
+
+</div>
+
+{% if m.height >= m.goal %}
+<div style="color:#e74c3c;font-weight:bold">
+🎉 富士山登頂！！
+</div>
+{% else %}
+<div style="font-size:12px">
+山頂まで {{m.remaining}} m
+</div>
+{% endif %}
 
 </div>
 
