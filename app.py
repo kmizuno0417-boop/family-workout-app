@@ -167,8 +167,16 @@ def index():
     GROUP BY m.name
     """,(f"{year}-{month:02d}",))
 
-    # 登山システム（1回 = 1m）
-    FUJI_HEIGHT = 3776
+    # 世界登山モード（1回 = 1m）
+    mountains = [
+        {"name":"高尾山","height":599},
+        {"name":"筑波山","height":877},
+        {"name":"富士山","height":3776},
+        {"name":"マッターホルン","height":4478},
+        {"name":"キリマンジャロ","height":5895},        
+        {"name":"エベレスト","height":8848},
+        {"name":"月","height":384400}
+    ]
 
     mountain_progress = []
 
@@ -177,16 +185,37 @@ def index():
         name = m[0]
         total = m[1] or 0
 
-        height = total
-        progress = min(int((height / FUJI_HEIGHT) * 100),100)
-        remaining = max(FUJI_HEIGHT - height,0)
+        climbed = total
+        passed_height = 0
+
+        current_mountain = mountains[-1]["name"]
+        goal = mountains[-1]["height"]
+        progress = 100
+        remaining = 0
+
+        for mt in mountains:
+
+            if climbed < passed_height + mt["height"]:
+
+                current_mountain = mt["name"]
+                goal = mt["height"]
+
+                current_height = climbed - passed_height
+
+                progress = int((current_height / goal) * 100)
+                remaining = goal - current_height
+
+                break
+
+            passed_height += mt["height"]
 
         mountain_progress.append({
             "name": name,
-            "height": height,
+            "height": climbed,
+            "mountain": current_mountain,
             "progress": progress,
             "remaining": remaining,
-            "goal": FUJI_HEIGHT
+            "goal": goal
         })
 
 

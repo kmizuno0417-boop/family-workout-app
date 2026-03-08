@@ -208,19 +208,29 @@ opacity:0.9;
 
 </div>
 
-<!-- 登山チャレンジ -->
+<!-- 世界登山チャレンジ -->
 <div class="card">
-<h3>🗻 富士山チャレンジ（1回＝1m）</h3>
+<h3>🌍 世界登山チャレンジ（1回＝1m）</h3>
+
+<div style="font-size:13px;margin-bottom:10px;">
+高尾山599m → 筑波山877m → 富士山3776m → マッターホルン4478m → キリマンジャロ5895m →エベレスト8848m → 月384400m
+</div>
 
 {% for m in mountain_progress %}
 
-<div style="margin-bottom:14px">
+<div style="margin-bottom:16px">
 
 <b style="color:{{member_colors[m.name]}}">
 {{m.name}}
 </b>
 
-{{m.height}} m
+<div style="font-size:13px">
+現在 {{m.height}} m
+</div>
+
+<div style="font-size:14px;font-weight:bold">
+⛰ {{m.mountain}}（{{m.goal}}m）
+</div>
 
 <div class="mountain-bar">
 
@@ -228,17 +238,15 @@ opacity:0.9;
 style="width:{{m.progress}}%">
 </div>
 
-<img class="fuji" src="https://upload.wikimedia.org/wikipedia/commons/1/12/Mount_Fuji_from_Hakone.jpg">
-
 </div>
 
-{% if m.height >= m.goal %}
-<div style="color:#e74c3c;font-weight:bold">
-🎉 富士山登頂！！
-</div>
-{% else %}
+{% if m.remaining > 0 %}
 <div style="font-size:12px">
 山頂まで {{m.remaining}} m
+</div>
+{% else %}
+<div style="color:#e74c3c;font-weight:bold">
+🎉 登頂！！
 </div>
 {% endif %}
 
