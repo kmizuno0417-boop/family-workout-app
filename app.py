@@ -167,56 +167,99 @@ def index():
     GROUP BY m.name
     """,(f"{year}-{month:02d}",))
 
-    # 世界登山モード（1回 = 1m）
-    mountains = [
-        {"name":"高尾山","height":599},
-        {"name":"筑波山","height":877},
-        {"name":"富士山","height":3776},
-        {"name":"マッターホルン","height":4478},
-        {"name":"キリマンジャロ","height":5895},        
-        {"name":"エベレスト","height":8848},
-        {"name":"月","height":384400}
-    ]
+    # レベルシステム
+    member_levels = {}
 
-    mountain_progress = []
+    for m in members:
 
-    for m in member_stats:
+        name = m[1]
 
-        name = m[0]
-        total = m[1] or 0
+        # 合計回数取得
+        row = query("""
+        SELECT SUM(reps)
+        FROM workouts w
+        JOIN members m ON w.member_id=m.id
+        WHERE m.name=?
+        """,(name,),one=True)
 
-        climbed = total
-        passed_height = 0
+        total = row[0] if row and row[0] else 0
 
-        current_mountain = mountains[-1]["name"]
-        goal = mountains[-1]["height"]
-        progress = 100
-        remaining = 0
+        level = total // 100
+        next_level = (level + 1) * 100
 
-        for mt in mountains:
+        progress = int((total % 100) / 100 * 100)
 
-            if climbed < passed_height + mt["height"]:
+        remain = next_level - total
 
-                current_mountain = mt["name"]
-                goal = mt["height"]
+        # 称号
+        if level >= 50:
+            title = "👑 レジェンド"
+        elif level >= 30:
+            title = "🦾 マスター"
+        elif level >= 15:
+            title = "⚔ 戦士"
+        elif level >= 5:
+            title = "🥉 見習い"
+        else:
+            title = "🙂 ルーキー"
 
-                current_height = climbed - passed_height
-
-                progress = int((current_height / goal) * 100)
-                remaining = goal - current_height
-
-                break
-
-            passed_height += mt["height"]
-
-        mountain_progress.append({
-            "name": name,
-            "height": climbed,
-            "mountain": current_mountain,
+        member_levels[name] = {
+            "level": level,
             "progress": progress,
-            "remaining": remaining,
-            "goal": goal
-        })
+            "remain": remain,
+            "title": title
+        }
+
+        # 世界登山モード（1回 = 1m）
+        mountains = [
+            {"name":"高尾山","height":599},
+            {"name":"筑波山","height":877},
+            {"name":"富士山","height":3776},
+            {"name":"マッターホルン","height":4478},
+            {"name":"キリマンジャロ","height":5895},        
+            {"name":"エベレスト","height":8848},
+            {"name":"月","height":384400}
+        ]
+
+        mountain_progress = []
+
+        for m in member_stats:
+
+            name = m[0]
+            total = m[1] or 0
+
+            climbed = total
+            passed_height = 0
+
+            current_mountain = mountains[-1]["name"]
+            goal = mountains[-1]["height"]
+            progress = 100
+            remaining = 0
+
+            for mt in mountains:
+
+                if climbed < passed_height + mt["height"]:
+
+                    current_mountain = mt["name"]
+                    goal = mt["height"]
+
+                    current_height = climbed - passed_height
+
+                    progress = int((current_height / goal) * 100)
+                    remaining = goal - current_height
+
+                    break
+
+                passed_height += mt["height"]
+
+            mountain_progress.append({
+                "name": name,
+                "height": climbed,
+                "mountain": current_mountain,
+                "progress": progress,
+                "remaining": remaining,
+                "goal": goal
+            })
 
 
     # 種目別メンバー統計
@@ -275,7 +318,6 @@ def index():
         reverse=True
     )
 
-
     return render_template(
         "index.html",
         members=members,
@@ -294,6 +336,7 @@ def index():
         current_date=today_str,
         member_streaks=member_streaks,
         streak_ranking=streak_ranking,
+        member_levels=member_levels,
         mountain_progress=mountain_progress
     )
 
