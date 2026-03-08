@@ -4,17 +4,20 @@ from datetime import date
 import calendar
 
 app = Flask(__name__)
-DB="workout.db"
+DB = "workout.db"
 
-def query(sql,args=(),one=False):
-    con=sqlite3.connect(DB)
-    cur=con.cursor()
-    cur.execute(sql,args)
-    r=cur.fetchall()
+# DBクエリ関数
+def query(sql, args=(), one=False):
+    con = sqlite3.connect(DB)
+    con.row_factory = sqlite3.Row  # dictのようにアクセス可能
+    cur = con.cursor()
+    cur.execute(sql, args)
+    r = cur.fetchall()
     con.commit()
     con.close()
     return (r[0] if r else None) if one else r
 
+# 初期化
 def init_db():
     query("""
     CREATE TABLE IF NOT EXISTS members(
@@ -37,27 +40,37 @@ def init_db():
 
 init_db()
 
+# トップページ（カレンダー＋グラフ）
 @app.route("/")
 def index():
-    today=date.today()
-    year=today.year
-    month=today.month
+    # URLパラメータで年月を取得
+    y = request.args.get("year", type=int)
+    m = request.args.get("month", type=int)
+    today = date.today()
+    year = y or today.year
+    month = m or today.month
 
-    members=query("SELECT * FROM members")
-    exercises=query("SELECT * FROM exercises")
+    # 日曜始まりカレンダー
+    calendar.setfirstweekday(calendar.SUNDAY)
+    cal = calendar.monthcalendar(year, month)
 
-    workouts=query("""
-    SELECT workouts.id, day, members.id, members.name, exercises.id, exercises.name, reps
+    members = query("SELECT * FROM members")
+    exercises = query("SELECT * FROM exercises")
+
+    workouts = query("""
+    SELECT workouts.id, day, members.id AS member_id, members.name AS member_name,
+           exercises.id AS exercise_id, exercises.name AS exercise_name, reps
     FROM workouts
-    JOIN members ON workouts.member_id=members.id
-    JOIN exercises ON workouts.exercise_id=exercises.id
+    JOIN members ON workouts.member_id = members.id
+    JOIN exercises ON workouts.exercise_id = exercises.id
     """)
 
-    workout_map={}
+    # 日付ごとにワークアウトをまとめる
+    workout_map = {}
     for w in workouts:
         wid, day, mid, mname, eid, ename, reps = w
         if day not in workout_map:
-            workout_map[day]=[]
+            workout_map[day] = []
         workout_map[day].append({
             "id": wid,
             "member_id": mid,
@@ -66,34 +79,34 @@ def index():
             "exercise": ename,
             "reps": reps
         })
-        
-    calendar.setfirstweekday(calendar.SUNDAY)
-    cal=calendar.monthcalendar(year,month)
 
-    ranking=query("""
-    SELECT members.name,SUM(reps)
+    # 今月ランキング
+    ranking = query("""
+    SELECT members.name, SUM(reps) AS total
     FROM workouts
-    JOIN members ON workouts.member_id=members.id
-    WHERE strftime('%Y-%m',day)=?
+    JOIN members ON workouts.member_id = members.id
+    WHERE strftime('%Y-%m', day) = ?
     GROUP BY members.name
-    ORDER BY SUM(reps) DESC
-    """,(f"{year}-{month:02d}",))
+    ORDER BY total DESC
+    """, (f"{year}-{month:02d}",))
 
-    exercise_stats=query("""
-    SELECT exercises.name,SUM(reps)
+    # 種目ごとの集計
+    exercise_stats = query("""
+    SELECT exercises.name, SUM(reps) AS total
     FROM workouts
-    JOIN exercises ON workouts.exercise_id=exercises.id
-    WHERE strftime('%Y-%m',day)=?
+    JOIN exercises ON workouts.exercise_id = exercises.id
+    WHERE strftime('%Y-%m', day) = ?
     GROUP BY exercises.name
-    """,(f"{year}-{month:02d}",))
+    """, (f"{year}-{month:02d}",))
 
-    member_stats=query("""
-    SELECT members.name,SUM(reps)
+    # メンバーごとの集計
+    member_stats = query("""
+    SELECT members.name, SUM(reps) AS total
     FROM workouts
-    JOIN members ON workouts.member_id=members.id
-    WHERE strftime('%Y-%m',day)=?
+    JOIN members ON workouts.member_id = members.id
+    WHERE strftime('%Y-%m', day) = ?
     GROUP BY members.name
-    """,(f"{year}-{month:02d}",))
+    """, (f"{year}-{month:02d}",))
 
     return render_template(
         "index.html",
@@ -108,47 +121,46 @@ def index():
         member_stats=member_stats
     )
 
-@app.route("/add_member",methods=["POST"])
+# メンバー追加
+@app.route("/add_member", methods=["POST"])
 def add_member():
-    name=request.form["name"]
-    query("INSERT INTO members(name) VALUES(?)",(name,))
+    name = request.form["name"]
+    query("INSERT INTO members(name) VALUES(?)", (name,))
     return redirect("/")
 
-@app.route("/add_exercise",methods=["POST"])
+# 種目追加
+@app.route("/add_exercise", methods=["POST"])
 def add_exercise():
-    name=request.form["name"]
-    query("INSERT INTO exercises(name) VALUES(?)",(name,))
+    name = request.form["name"]
+    query("INSERT INTO exercises(name) VALUES(?)", (name,))
     return redirect("/")
 
-@app.route("/add_workout",methods=["POST"])
+# ワークアウト追加・編集
+@app.route("/add_workout", methods=["POST"])
 def add_workout():
-    wid=request.form.get("id")
-    member=request.form["member"]
-    exercise=request.form["exercise"]
-    reps=request.form["reps"]
-    day=request.form["day"]
+    wid = request.form.get("id")
+    member = request.form["member"]
+    exercise = request.form["exercise"]
+    reps = request.form["reps"]
+    day = request.form["day"]
 
     if wid:  # 編集
         query("UPDATE workouts SET member_id=?, exercise_id=?, reps=?, day=? WHERE id=?",
               (member, exercise, reps, day, wid))
     else:    # 新規
-        query("INSERT INTO workouts(member_id,exercise_id,reps,day) VALUES(?,?,?,?)",
+        query("INSERT INTO workouts(member_id, exercise_id, reps, day) VALUES(?,?,?,?)",
               (member, exercise, reps, day))
-
     return redirect("/")
 
+# ワークアウト削除
 @app.route("/delete_workout", methods=["POST"])
 def delete_workout():
-    import json, sqlite3
+    import json
     data = json.loads(request.data)
     wid = data.get("id")
     if wid:
-        conn=sqlite3.connect(DB)
-        c=conn.cursor()
-        c.execute("DELETE FROM workouts WHERE id=?",(wid,))
-        conn.commit()
-        conn.close()
+        query("DELETE FROM workouts WHERE id=?", (wid,))
     return "", 204
 
-if __name__=="__main__":
+if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
