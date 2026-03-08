@@ -1,301 +1,231 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="ja">
 <head>
-
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
+<title>💪 家族筋トレ</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <style>
-
-body{
-font-family:sans-serif;
-background:#f3f3f3;
-margin:15px;
+body {
+    font-family:sans-serif;
+    background:#f3f3f3;
+    margin:0;
+    padding:10px;
 }
-
-h1{text-align:center;}
-
+h1{text-align:center; margin-bottom:10px;}
 .card{
-background:white;
-padding:15px;
-margin-bottom:20px;
-border-radius:12px;
-box-shadow:0 2px 5px rgba(0,0,0,0.1);
+    background:white;
+    padding:15px;
+    margin-bottom:15px;
+    border-radius:12px;
+    box-shadow:0 2px 5px rgba(0,0,0,0.1);
 }
-
 input,select,button{
-width:100%;
-padding:10px;
-margin:6px 0;
-font-size:16px;
+    width:100%;
+    padding:12px;
+    margin:6px 0;
+    font-size:16px;
+    box-sizing:border-box;
 }
-
 button{
-background:#27ae60;
-border:none;
-color:white;
-border-radius:8px;
+    background:#27ae60;
+    border:none;
+    color:white;
+    border-radius:8px;
 }
-
+button.delete{
+    background:#e74c3c;
+}
 .calendar{
-display:grid;
-grid-template-columns:repeat(7,1fr);
-gap:4px;
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:4px;
+    max-height:500px;
+    overflow-y:auto;
+    padding:5px;
 }
-
 .day{
-background:white;
-min-height:90px;
-padding:5px;
-border-radius:8px;
-cursor:pointer;
-font-size:12px;
+    background:white;
+    min-height:90px;
+    padding:5px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:12px;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-start;
 }
-
 .daynum{font-weight:bold;}
-
 .log{
-font-size:11px;
-background:#ecf9f1;
-margin-top:3px;
-padding:2px;
-border-radius:4px;
+    font-size:11px;
+    background:#ecf9f1;
+    margin-top:3px;
+    padding:2px;
+    border-radius:4px;
+    cursor:pointer;
 }
-
 .empty{background:transparent;}
-
 .modal{
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.5);
-display:none;
-align-items:center;
-justify-content:center;
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.5);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:1000;
 }
-
 .modal-content{
-background:white;
-padding:20px;
-border-radius:10px;
-width:90%;
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    width:90%;
 }
-
 </style>
-
-<script>
-
-function openModal(day){
-document.getElementById("modal").style.display="flex"
-document.getElementById("dayinput").value=day
-}
-
-function closeModal(){
-document.getElementById("modal").style.display="none"
-}
-
-</script>
-
 </head>
-
 <body>
 
 <h1>💪 家族筋トレ</h1>
 
 
+
+<!-- カレンダー -->
 <div class="card">
+<h3>{{year}}年 {{month}}月</h3>
+<div class="calendar">
+<div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div>
+{% for week in calendar %}
+{% for day in week %}
+{% if day==0 %}
+<div class="empty"></div>
+{% else %}
+{% set d="%04d-%02d-%02d"|format(year,month,day) %}
+<div class="day">
+<div class="daynum">{{day}}</div>
+{% if workouts.get(d) %}
+{% for w in workouts[d] %}
+<div class="log" onclick="openModal('{{d}}','{{w.member_id}}','{{w.exercise_id}}','{{w.reps}}','{{w.id}}')">
+{{w.member}}<br>{{w.exercise}} {{w.reps}}
+</div>
+{% endfor %}
+{% endif %}
+<div onclick="openModal('{{d}}')" style="flex:1"></div>
+</div>
+{% endif %}
+{% endfor %}
+{% endfor %}
+</div>
+</div>
 
+<!-- メンバー追加 -->
+<div class="card">
 <h3>メンバー追加</h3>
-
 <form action="/add_member" method="post">
 <input name="name" placeholder="名前">
 <button>追加</button>
 </form>
-
 </div>
 
-
+<!-- 種目追加 -->
 <div class="card">
-
 <h3>種目追加</h3>
-
 <form action="/add_exercise" method="post">
 <input name="name" placeholder="腕立て / スクワット">
 <button>追加</button>
 </form>
-
 </div>
 
-
+<!-- 今月ランキング -->
 <div class="card">
-
-<h3>{{year}}年 {{month}}月</h3>
-
-<div class="calendar">
-
-<div>日</div>
-<div>月</div>
-<div>火</div>
-<div>水</div>
-<div>木</div>
-<div>金</div>
-<div>土</div>
-
-{% for week in calendar %}
-{% for day in week %}
-
-{% if day==0 %}
-
-<div class="empty"></div>
-
-{% else %}
-
-{% set d="%04d-%02d-%02d"|format(year,month,day) %}
-
-<div class="day" onclick="openModal('{{d}}')">
-
-<div class="daynum">{{day}}</div>
-
-{% if workouts.get(d) %}
-
-{% for w in workouts[d] %}
-
-<div class="log">
-{{w.member}}<br>
-{{w.exercise}} {{w.reps}}
-</div>
-
-{% endfor %}
-
-{% endif %}
-
-</div>
-
-{% endif %}
-
-{% endfor %}
-{% endfor %}
-
-</div>
-
-</div>
-
-
-<div class="card">
-
 <h3>🏆 今月ランキング</h3>
-
 {% for r in ranking %}
 <div>{{loop.index}}位 {{r[0]}} : {{r[1]}}</div>
 {% endfor %}
-
 </div>
 
-
+<!-- 種目グラフ -->
 <div class="card">
-
 <h3>📊 種目グラフ</h3>
-
 <canvas id="exerciseChart"></canvas>
-
 </div>
 
-
+<!-- メンバーグラフ -->
 <div class="card">
-
 <h3>📊 メンバーグラフ</h3>
-
 <canvas id="memberChart"></canvas>
-
 </div>
 
-
+<!-- モーダル -->
 <div class="modal" id="modal">
-
 <div class="modal-content">
-
 <h3>トレーニング記録</h3>
-
-<form action="/add_workout" method="post">
-
+<form id="workoutForm" action="/add_workout" method="post">
 <input type="hidden" name="day" id="dayinput">
-
-<select name="member">
+<input type="hidden" name="id" id="workoutId">
+<select name="member" id="memberSelect">
 {% for m in members %}
 <option value="{{m[0]}}">{{m[1]}}</option>
 {% endfor %}
 </select>
-
-<select name="exercise">
+<select name="exercise" id="exerciseSelect">
 {% for e in exercises %}
 <option value="{{e[0]}}">{{e[1]}}</option>
 {% endfor %}
 </select>
-
-<input type="number" name="reps" placeholder="回数">
-
-<button>保存</button>
-
+<input type="number" name="reps" id="repsInput" placeholder="回数">
+<button type="submit">保存</button>
+<button type="button" class="delete" id="deleteBtn" style="display:none;">削除</button>
 </form>
-
 <button onclick="closeModal()">閉じる</button>
-
 </div>
-
 </div>
-
 
 <script>
+// モーダル操作
+let currentWorkoutId=null;
+function openModal(day, member="", exercise="", reps="", wid=null){
+    document.getElementById("modal").style.display="flex";
+    document.getElementById("dayinput").value=day;
+    document.getElementById("memberSelect").value=member;
+    document.getElementById("exerciseSelect").value=exercise;
+    document.getElementById("repsInput").value=reps;
+    document.getElementById("workoutId").value = wid || "";
+    currentWorkoutId = wid;
+    document.getElementById("deleteBtn").style.display = wid!==null ? "block":"none";
+}
+function closeModal(){
+    document.getElementById("modal").style.display="none";
+}
 
-const exerciseLabels=[
-{% for e in exercise_stats %}
-"{{e[0]}}",
-{% endfor %}
-]
-
-const exerciseData=[
-{% for e in exercise_stats %}
-{{e[1]}},
-{% endfor %}
-]
-
-new Chart(document.getElementById("exerciseChart"),{
-type:"bar",
-data:{labels:exerciseLabels,datasets:[{data:exerciseData}]},
-options:{plugins:{legend:{display:false}}}
-})
-
-
-const memberLabels=[
-{% for m in member_stats %}
-"{{m[0]}}",
-{% endfor %}
-]
-
-const memberData=[
-{% for m in member_stats %}
-{{m[1]}},
-{% endfor %}
-]
-
-new Chart(document.getElementById("memberChart"),{
-type:"bar",
-data:{labels:memberLabels,datasets:[{data:memberData}]},
-options:{plugins:{legend:{display:false}}}
-})
-
+// 削除ボタン
+document.getElementById("deleteBtn").addEventListener("click",()=>{
+    if(currentWorkoutId && confirm("本当に削除しますか？")){
+        fetch("/delete_workout",{
+            method:"POST",
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({id:currentWorkoutId})
+        }).then(()=>location.reload());
+    }
+});
 </script>
 
 <script>
+// グラフ
+const exerciseLabels=[{% for e in exercise_stats %}"{{e[0]}}",{% endfor %}];
+const exerciseData=[{% for e in exercise_stats %}{{e[1]}},{% endfor %}];
+new Chart(document.getElementById("exerciseChart"),{
+    type:"bar",
+    data:{labels:exerciseLabels,datasets:[{data:exerciseData}]},
+    options:{plugins:{legend:{display:false}}}
+});
 
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/static/service-worker.js")
-}
-
+const memberLabels=[{% for m in member_stats %}"{{m[0]}}",{% endfor %}];
+const memberData=[{% for m in member_stats %}{{m[1]}},{% endfor %}];
+new Chart(document.getElementById("memberChart"),{
+    type:"bar",
+    data:{labels:memberLabels,datasets:[{data:memberData}]},
+    options:{plugins:{legend:{display:false}}}
+});
 </script>
 
 </body>
