@@ -149,6 +149,43 @@ button.delete{ background:#e74c3c;}
 
 </div>
 
+<!-- 連続記録 -->
+<div class="card">
+<h3>🔥 連続記録</h3>
+
+{% for s in member_streaks %}
+<div>
+{{ "🔥" * s.streak }} {{ s.name }} : {{ s.streak }}日
+</div>
+{% endfor %}
+</div>
+
+<!-- ストリーキングランキング -->
+<div class="card">
+<h3>🔥 連続記録ランキング</h3>
+
+{% for s in streak_ranking %}
+
+<div>
+
+{% if loop.index == 1 %}🥇
+{% elif loop.index == 2 %}🥈
+{% elif loop.index == 3 %}🥉
+{% else %}{{loop.index}}位
+{% endif %}
+
+<span style="color:{{member_colors[s.name]}}">
+{{ s.name }}
+</span>
+
+ : {{ s.streak }}日
+
+</div>
+
+{% endfor %}
+
+</div>
+
 <!-- 種目グラフ -->
 <div class="card">
 <h3>📊 種目別グラフ（棒クリックで日別詳細）</h3>
