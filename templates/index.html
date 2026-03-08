@@ -15,7 +15,7 @@ button.delete{ background:#e74c3c;}
 .calendar{ display:grid; grid-template-columns:repeat(7,1fr); gap:4px; max-height:500px; overflow-y:auto; padding:5px;}
 .day{ background:white; min-height:90px; padding:5px; border-radius:8px; cursor:pointer; font-size:12px; display:flex; flex-direction:column; justify-content:flex-start;}
 .daynum{font-weight:bold;}
-.log{ font-size:11px; background:#ecf9f1; margin-top:3px; padding:2px; border-radius:4px; cursor:pointer;}
+.log{ font-size:11px; margin-top:3px; padding:2px; border-radius:4px; cursor:pointer; color:white;}
 .empty{background:transparent;}
 .modal{ position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; z-index:1000;}
 .modal-content{ background:white; padding:20px; border-radius:10px; width:90%; max-height:90%; overflow:auto;}
@@ -23,13 +23,25 @@ button.delete{ background:#e74c3c;}
 </head>
 <body>
 
-<h1>💪 家族筋トレ</h1>
+<h1>💪 家族で筋トレ</h1>
+
+<!-- メンバー -->
+<div class="card">
+    <h4>メンバー</h4>
+    {% for m in members %}
+        <span style="background:{{ member_colors[m[1]] }}; color:white; padding:2px 6px; border-radius:4px; margin-right:4px;">
+            {{ m[1] }}
+        </span>
+    {% endfor %}
+</div>
 
 <!-- カレンダー -->
 <div class="card">
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; flex-wrap: nowrap;">
     <button type="button" onclick="changeMonth(-1)">◀ 前月</button>
-    <h3>{{year}}年 {{month}}月</h3>
+    <h3 style="margin:0; font-size:16px; white-space: nowrap;">
+        {{year}}年 {{month}}月
+    </h3>
     <button type="button" onclick="changeMonth(1)">次月 ▶</button>
 </div>
 <div class="calendar">
@@ -44,8 +56,10 @@ button.delete{ background:#e74c3c;}
           <div class="daynum" onclick="openModal('{{d}}')">{{day}}</div>
           {% if workouts.get(d) %}
               {% for w in workouts[d] %}
-                  <div class="log" onclick="openModal('{{d}}','{{w.member_id}}','{{w.exercise_id}}','{{w.reps}}','{{w.id}}')">
-                      {{w.member}}<br>{{w.exercise}} {{w.reps}}
+                  <div class="log" 
+                      style="background:{{ member_colors[w.member] }};"
+                      onclick="openModal('{{d}}','{{w.member_id}}','{{w.exercise_id}}','{{w.reps}}','{{w.id}}')">
+                      {{ w.member }}<br>{{ w.exercise }} {{ w.reps }}
                   </div>
               {% endfor %}
           {% endif %}
@@ -55,6 +69,52 @@ button.delete{ background:#e74c3c;}
   {% endfor %}
 {% endfor %}
 </div>
+</div>
+
+
+
+<!-- 総合ランキング -->
+<div class="card">
+<h3>🏆 今月総合ランキング</h3>
+{% for r in ranking %}
+<div>{{loop.index}}位 {{r[0]}} : {{r[1]}}</div>
+{% endfor %}
+</div>
+
+<!-- 種目別ランキング -->
+<div class="card">
+<h3>🏅 種目別ランキング</h3>
+
+{% set grouped = {} %}
+{% for r in ranking_by_exercise %}
+    {% set exercise = r[0] %}
+    {% set member = r[1] %}
+    {% set reps = r[2] %}
+    {% if exercise not in grouped %}
+        {% set _ = grouped.update({exercise: []}) %}
+    {% endif %}
+    {% set _ = grouped[exercise].append({'member': member, 'reps': reps}) %}
+{% endfor %}
+
+{% for exercise, members_list in grouped.items() %}
+    <b>{{ exercise }}</b><br>
+    {% for m in members_list %}
+        &nbsp;&nbsp;{{ m.member }} : {{ m.reps }}<br>
+    {% endfor %}
+    <hr style="margin:6px 0;">
+{% endfor %}
+</div>
+
+<!-- 種目グラフ -->
+<div class="card">
+<h3>📊 種目別グラフ（棒クリックで日別詳細）</h3>
+<canvas id="exerciseChart"></canvas>
+</div>
+
+<!-- メンバーグラフ -->
+<div class="card">
+<h3>📊 メンバー別グラフ（全種目合計）</h3>
+<canvas id="memberChart"></canvas>
 </div>
 
 <!-- メンバー追加 -->
@@ -73,40 +133,6 @@ button.delete{ background:#e74c3c;}
 <input name="name" placeholder="腕立て / スクワット">
 <button>追加</button>
 </form>
-</div>
-
-<!-- 総合ランキング -->
-<div class="card">
-<h3>🏆 今月総合ランキング</h3>
-{% for r in ranking %}
-<div>{{loop.index}}位 {{r[0]}} : {{r[1]}}</div>
-{% endfor %}
-</div>
-
-<!-- 種目別ランキング -->
-<div class="card">
-<h3>🏅 種目別ランキング</h3>
-{% set current_exercise="" %}
-{% for r in ranking_by_exercise %}
-    {% if current_exercise != r[0] %}
-        {% if not loop.first %}<hr>{% endif %}
-        <b>{{r[0]}}</b><br>
-        {% set current_exercise = r[0] %}
-    {% endif %}
-    {{r[1]}} : {{r[2]}}<br>
-{% endfor %}
-</div>
-
-<!-- 種目グラフ -->
-<div class="card">
-<h3>📊 種目別グラフ（棒クリックで日別詳細）</h3>
-<canvas id="exerciseChart"></canvas>
-</div>
-
-<!-- メンバーグラフ -->
-<div class="card">
-<h3>📊 メンバー別グラフ（全種目合計）</h3>
-<canvas id="memberChart"></canvas>
 </div>
 
 <!-- モーダル -->
@@ -136,9 +162,13 @@ button.delete{ background:#e74c3c;}
 </div>
 
 <script>
-let currentWorkoutId=null;
+// 現在編集中のワークアウトID
+let currentWorkoutId = null;
+
+// Flaskから渡されたデータ
 const member_exercise_stats = {{ member_exercise_stats|safe }};
-const exercise_day_details = {{ exercise_day_details|safe }};
+const exercise_day_details   = {{ exercise_day_details|safe }};
+const member_colors = {{ member_colors|tojson }};
 
 // モーダル操作
 function openModal(day, member="", exercise="", reps="", wid=null){
@@ -166,7 +196,7 @@ function changeMonth(delta){
 }
 
 // 削除ボタン
-document.getElementById("deleteBtn").addEventListener("click",()=>{
+document.getElementById("deleteBtn").addEventListener("click", ()=>{
     if(currentWorkoutId && confirm("本当に削除しますか？")){
         fetch("/delete_workout",{
             method:"POST",
@@ -176,7 +206,7 @@ document.getElementById("deleteBtn").addEventListener("click",()=>{
     }
 });
 
-// グラフ
+// 種目別グラフ
 const exerciseLabels = Object.keys(member_exercise_stats);
 const memberNames = Object.values(member_exercise_stats).flatMap(v=>Object.keys(v));
 const uniqueMembers = [...new Set(memberNames)];
@@ -187,7 +217,7 @@ const datasets = uniqueMembers.map(m=>{
         data: exerciseLabels.map(ex=>{
             return member_exercise_stats[ex][m] || 0;
         }),
-        backgroundColor: `hsl(${Math.random()*360},70%,50%)`
+        backgroundColor: member_colors[m] || `hsl(${Math.random()*360},70%,50%)`
     };
 });
 
@@ -203,7 +233,7 @@ const exerciseChart = new Chart(document.getElementById("exerciseChart"),{
                 const details = exercise_day_details[ex];
                 let html = `<h4>${ex} 日別詳細</h4>`;
                 details.forEach(d=>{
-                    html += `${d.day} : ${d.member} ${d.reps}<br>`;
+                    html += `<span style="color:${member_colors[d.member]}">${d.member}</span> : ${d.reps}<br>`;
                 });
                 document.getElementById("chartDetail").innerHTML = html;
                 document.getElementById("modal").style.display="flex";
@@ -212,12 +242,19 @@ const exerciseChart = new Chart(document.getElementById("exerciseChart"),{
     }
 });
 
-// メンバー別グラフ
-const memberLabels = {{ member_stats|map(attribute=0)|list|safe }};
-const memberData = {{ member_stats|map(attribute=1)|list|safe }};
+// メンバー別グラフ（順番を種目別グラフと同じにする）
+const memberLabels = uniqueMembers;  // uniqueMembers の順番にする
+const memberData = memberLabels.map(m => {
+    // member_stats から合計を取得
+    const stat = {{ member_stats|tojson }};
+    const entry = stat.find(s => s[0] === m);
+    return entry ? entry[1] : 0;
+});
+const memberBgColors = memberLabels.map(m => member_colors[m] || "#3498db");
+
 new Chart(document.getElementById("memberChart"),{
     type:"bar",
-    data:{ labels: memberLabels, datasets:[{data:memberData, backgroundColor:"#3498db"}] },
+    data:{ labels: memberLabels, datasets:[{data: memberData, backgroundColor: memberBgColors}] },
     options:{ plugins:{ legend:{display:false} } }
 });
 </script>

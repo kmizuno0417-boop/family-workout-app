@@ -3,9 +3,12 @@ import sqlite3
 from datetime import date
 import calendar
 import json
+import random
 
 app = Flask(__name__)
 DB="workout.db"
+
+
 
 def query(sql,args=(),one=False):
     con=sqlite3.connect(DB)
@@ -40,32 +43,44 @@ init_db()
 
 @app.route("/")
 def index():
+    # 年月取得
     y = request.args.get("year", type=int)
     m = request.args.get("month", type=int)
     today = date.today()
     year = y or today.year
     month = m or today.month
 
+    # カレンダー作成
     calendar.setfirstweekday(calendar.SUNDAY)
     cal = calendar.monthcalendar(year, month)
 
-    members=query("SELECT * FROM members")
-    exercises=query("SELECT * FROM exercises")
+    # メンバーと種目を取得
+    members = query("SELECT * FROM members")
+    exercises = query("SELECT * FROM exercises")
+
+    # カラーパレット（ここも関数内）
+    member_colors = {}
+    color_palette = [
+        "#e74c3c","#3498db","#27ae60","#f39c12",
+        "#9b59b6","#1abc9c","#e67e22","#2ecc71"
+    ]
+    for i, m in enumerate(members):
+        member_colors[m[1]] = color_palette[i % len(color_palette)]
 
     # ワークアウト取得
-    workouts=query("""
-    SELECT w.id, w.day, m.id, m.name, e.id, e.name, w.reps
-    FROM workouts w
-    JOIN members m ON w.member_id=m.id
-    JOIN exercises e ON w.exercise_id=e.id
+    workouts = query("""
+        SELECT w.id, w.day, m.id, m.name, e.id, e.name, w.reps
+        FROM workouts w
+        JOIN members m ON w.member_id=m.id
+        JOIN exercises e ON w.exercise_id=e.id
     """)
 
     # 日ごとマッピング
-    workout_map={}
+    workout_map = {}
     for w in workouts:
         wid, day, mid, mname, eid, ename, reps = w
         if day not in workout_map:
-            workout_map[day]=[]
+            workout_map[day] = []
         workout_map[day].append({
             "id": wid,
             "member_id": mid,
@@ -76,43 +91,43 @@ def index():
         })
 
     # ランキング
-    ranking=query("""
-    SELECT m.name,SUM(w.reps)
-    FROM workouts w
-    JOIN members m ON w.member_id=m.id
-    WHERE strftime('%Y-%m',w.day)=?
-    GROUP BY m.name
-    ORDER BY SUM(w.reps) DESC
-    """,(f"{year}-{month:02d}",))
+    ranking = query("""
+        SELECT m.name, SUM(w.reps)
+        FROM workouts w
+        JOIN members m ON w.member_id=m.id
+        WHERE strftime('%Y-%m', w.day)=?
+        GROUP BY m.name
+        ORDER BY SUM(w.reps) DESC
+    """, (f"{year}-{month:02d}",))
 
     # 種目別ランキング
     ranking_by_exercise = query("""
-    SELECT e.name, m.name, SUM(w.reps) as total
-    FROM workouts w
-    JOIN exercises e ON w.exercise_id = e.id
-    JOIN members m ON w.member_id = m.id
-    WHERE strftime('%Y-%m', w.day)=?
-    GROUP BY e.name, m.name
-    ORDER BY e.name, total DESC
+        SELECT e.name, m.name, SUM(w.reps) as total
+        FROM workouts w
+        JOIN exercises e ON w.exercise_id = e.id
+        JOIN members m ON w.member_id = m.id
+        WHERE strftime('%Y-%m', w.day)=?
+        GROUP BY e.name, m.name
+        ORDER BY e.name, total DESC
     """, (f"{year}-{month:02d}",))
 
-    # 種目統計（既存）
-    exercise_stats=query("""
-    SELECT e.name,SUM(w.reps)
-    FROM workouts w
-    JOIN exercises e ON w.exercise_id=e.id
-    WHERE strftime('%Y-%m',w.day)=?
-    GROUP BY e.name
-    """,(f"{year}-{month:02d}",))
+    # 種目統計
+    exercise_stats = query("""
+        SELECT e.name, SUM(w.reps)
+        FROM workouts w
+        JOIN exercises e ON w.exercise_id = e.id
+        WHERE strftime('%Y-%m', w.day)=?
+        GROUP BY e.name
+    """, (f"{year}-{month:02d}",))
 
-    # メンバー統計（既存）
-    member_stats=query("""
-    SELECT m.name,SUM(w.reps)
-    FROM workouts w
-    JOIN members m ON w.member_id=m.id
-    WHERE strftime('%Y-%m',w.day)=?
-    GROUP BY m.name
-    """,(f"{year}-{month:02d}",))
+    # メンバー統計
+    member_stats = query("""
+        SELECT m.name, SUM(w.reps)
+        FROM workouts w
+        JOIN members m ON w.member_id = m.id
+        WHERE strftime('%Y-%m', w.day)=?
+        GROUP BY m.name
+    """, (f"{year}-{month:02d}",))
 
     # 種目ごとにメンバー内訳
     member_exercise_stats = {}
@@ -135,8 +150,8 @@ def index():
             "member": mname,
             "reps": reps
         })
-    
 
+    # ここまで関数内にまとめる
     return render_template(
         "index.html",
         members=members,
@@ -145,6 +160,7 @@ def index():
         workouts=workout_map,
         year=year,
         month=month,
+        member_colors=member_colors,
         ranking=ranking,
         exercise_stats=exercise_stats,
         member_stats=member_stats,
