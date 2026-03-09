@@ -691,5 +691,43 @@ color:"white"
 });
 </script>
 
+<!-- ここから更新ボタン -->
+<button id="refreshBtn">🔄</button>
+
+<style>
+#refreshBtn {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    z-index: 9999;
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    border: 3px solid #2d7f2d;
+    background: rgba(108, 192, 74, 0.8);
+    color: white;
+    box-shadow: 3px 3px 0 #000;
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 0;
+}
+
+#refreshBtn:hover {
+    background: rgba(125, 223, 92, 0.9);
+}
+
+#refreshBtn:active {
+    transform: translate(2px,2px);
+    box-shadow: 1px 1px 0 #000;
+}
+</style>
+
+<script>
+document.getElementById("refreshBtn").addEventListener("click", ()=>{
+    location.reload();
+});
+</script>
+
+
 </body>
 </html>
