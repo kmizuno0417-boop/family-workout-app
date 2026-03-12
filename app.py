@@ -10,6 +10,7 @@ DB="workout.db"
 
 # ストリーク計算
 def calculate_streak(member_id):
+
     conn = sqlite3.connect(DB)
     cur = conn.cursor()
 
@@ -23,13 +24,22 @@ def calculate_streak(member_id):
     rows = cur.fetchall()
     conn.close()
 
-    dates = [r[0] for r in rows]
+    dates = set(r[0] for r in rows)
+
+    today = date.today()
+    yesterday = today - timedelta(days=1)
 
     streak = 0
-    today = date.today()
+
+    # 今日やってるか
+    if today.strftime("%Y-%m-%d") in dates:
+        start = today
+    else:
+        start = yesterday
 
     for i in range(365):
-        d = (today - timedelta(days=i)).strftime("%Y-%m-%d")
+        d = (start - timedelta(days=i)).strftime("%Y-%m-%d")
+
         if d in dates:
             streak += 1
         else:
