@@ -216,6 +216,13 @@ button.delete{
     width:100%;
 }
 
+.member-delete-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin:6px 0;
+}
+
 @media (min-width:600px) {
     .card form {
         flex-direction: row;
@@ -495,6 +502,60 @@ style="left:{{m.progress}}%">
 </form>
 </div>
 
+<!-- データ削除 -->
+<div class="card">
+<h3>🗑 データ削除</h3>
+
+<div style="margin-bottom:6px;">種類</div>
+
+<select id="deleteType" onchange="switchDeleteTarget()">
+<option value="member">メンバー</option>
+<option value="exercise">種目</option>
+</select>
+
+<form id="deleteMemberForm" action="/delete_member" method="post">
+
+<div style="margin-top:8px;">対象</div>
+
+<select name="id">
+<option value="">メンバーを選択</option>
+{% for m in members %}
+<option value="{{m[0]}}">
+{{m[1]}}
+</option>
+{% endfor %}
+</select>
+
+<button class="delete"
+onclick="return confirm('このメンバーと全ての記録を削除しますか？')">
+削除
+</button>
+
+</form>
+
+
+<form id="deleteExerciseForm" action="/delete_exercise" method="post" style="display:none">
+
+<div style="margin-top:8px;">対象</div>
+
+<select name="id">
+<option value="">種目を選択</option>
+{% for e in exercises %}
+<option value="{{e[0]}}">
+{{e[1]}}
+</option>
+{% endfor %}
+</select>
+
+<button class="delete"
+onclick="return confirm('この種目と全ての記録を削除しますか？')">
+削除
+</button>
+
+</form>
+
+</div>
+
 <!-- モーダル -->
 <div class="modal" id="modal">
 <div class="modal-content">
@@ -553,6 +614,23 @@ function changeMonth(delta){
     if(m<1){ m=12; y-=1; }
     if(m>12){ m=1; y+=1; }
     window.location.href = `/?year=${y}&month=${m}`;
+}
+
+function switchDeleteTarget(){
+
+const type = document.getElementById("deleteType").value
+
+const memberForm = document.getElementById("deleteMemberForm")
+const exerciseForm = document.getElementById("deleteExerciseForm")
+
+if(type === "member"){
+memberForm.style.display="block"
+exerciseForm.style.display="none"
+}else{
+memberForm.style.display="none"
+exerciseForm.style.display="block"
+}
+
 }
 
 // 削除ボタン

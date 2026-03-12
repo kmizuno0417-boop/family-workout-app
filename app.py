@@ -403,6 +403,44 @@ def delete_workout():
 
     return "",204
 
+@app.route("/delete_member", methods=["POST"])
+def delete_member():
+
+    member_id = request.form["id"]
+
+    conn = sqlite3.connect(DB)
+    cur = conn.cursor()
+
+    # ワークアウト削除
+    cur.execute("DELETE FROM workouts WHERE member_id=?", (member_id,))
+
+    # メンバー削除
+    cur.execute("DELETE FROM members WHERE id=?", (member_id,))
+
+    conn.commit()
+    conn.close()
+
+    return redirect("/")
+
+
+@app.route("/delete_exercise", methods=["POST"])
+def delete_exercise():
+
+    exercise_id = request.form["id"]
+
+    conn = sqlite3.connect(DB)
+    cur = conn.cursor()
+
+    # ワークアウト削除
+    cur.execute("DELETE FROM workouts WHERE exercise_id=?", (exercise_id,))
+
+    # 種目削除
+    cur.execute("DELETE FROM exercises WHERE id=?", (exercise_id,))
+
+    conn.commit()
+    conn.close()
+
+    return redirect("/")
 
 if __name__=="__main__":
     app.run(host="0.0.0.0",port=5000,debug=True)
