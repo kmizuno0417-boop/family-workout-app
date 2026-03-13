@@ -256,7 +256,18 @@ button.delete{
 </div>
 <div style="font-size:12px">次のレベルまで {{ lv.remain }} 回</div>
 </div>
+{% if member_badges[m[1]] %}
+<div style="margin-top:6px;font-size:12px">
+
+{% for b in member_badges[m[1]] %}
+<div>{{b}}</div>
 {% endfor %}
+
+</div>
+{% endif %}
+<br>
+{% endfor %}
+
 </div>
 
 <!-- カレンダー -->

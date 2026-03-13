@@ -180,6 +180,48 @@ def index():
     # レベルシステム
     member_levels = {}
 
+    # バッジシステム
+    member_badges = {}
+
+    for m in members:
+
+        name = m[1]
+
+        row = query("""
+        SELECT SUM(reps)
+        FROM workouts w
+        JOIN members m ON w.member_id=m.id
+        WHERE m.name=?
+        """,(name,),one=True)
+
+        total = row[0] if row and row[0] else 0
+
+        badges = []
+
+        # 回数バッジ
+        if total >= 100:
+            badges.append("🥉 100回達成")
+
+        if total >= 3000:
+            badges.append("🥈 3000回達成")
+
+        if total >= 10000:
+            badges.append("🥇 10000回達成")
+
+        # ストリークバッジ
+        streak = calculate_streak(m[0])
+
+        if streak >= 3:
+            badges.append("🔥 3日ストリーク")
+
+        if streak >= 7:
+            badges.append("🔥 7日ストリーク")
+
+        if streak >= 30:
+            badges.append("🔥 30日ストリーク")
+
+        member_badges[name] = badges
+
     for m in members:
 
         name = m[1]
@@ -352,6 +394,7 @@ def index():
         member_streaks=member_streaks,
         streak_ranking=streak_ranking,
         member_levels=member_levels,
+        member_badges=member_badges,
         mountain_progress=mountain_progress
     )
 
