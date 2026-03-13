@@ -202,11 +202,11 @@ def index():
         remain = next_level - total
 
         # 称号
-        if level >= 50:
+        if level >= 100:
             title = "👑 レジェンド"
-        elif level >= 30:
+        elif level >= 50:
             title = "🦾 マスター"
-        elif level >= 15:
+        elif level >= 20:
             title = "⚔ 戦士"
         elif level >= 5:
             title = "🥉 見習い"
