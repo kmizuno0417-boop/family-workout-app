@@ -374,13 +374,12 @@ button.delete{
 
 {% for s in member_streaks %}
 <div>
-{{ "🔥" * s.streak }}
-
 <span style="color:{{member_colors[s.name]}}; font-weight:bold;">
 {{ s.name }}
 </span>
 
  : {{ s.streak }}日
+ {{ "🔥" * s.streak }}
 </div>
 {% endfor %}
 </div>
