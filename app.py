@@ -281,6 +281,8 @@ def index():
     for w in workouts:
         wid,day,mid,mname,eid,ename,reps=w
 
+        reps = int(reps) if reps else 0
+
         if ename not in member_exercise_stats:
             member_exercise_stats[ename]={}
 
@@ -374,7 +376,7 @@ def add_workout():
     wid=request.form.get("id")
     member=request.form["member"]
     exercise=request.form["exercise"]
-    reps=request.form["reps"]
+    reps=int(request.form["reps"])  
     day=request.form["day"]
 
     if wid:
