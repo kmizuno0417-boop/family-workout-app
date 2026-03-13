@@ -228,7 +228,10 @@ def index():
             {"name":"マッターホルン","height":4478},
             {"name":"キリマンジャロ","height":5895},        
             {"name":"エベレスト","height":8848},
-            {"name":"月","height":384400}
+            {"name":"成層圏","height":50000},
+            {"name":"宇宙","height":100000},
+            {"name":"月","height":384400},
+            {"name":"宇宙ステーション","height":408000}
         ]
 
         mountain_progress = []
