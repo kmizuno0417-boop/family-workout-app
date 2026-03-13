@@ -376,7 +376,8 @@ def add_workout():
     wid=request.form.get("id")
     member=request.form["member"]
     exercise=request.form["exercise"]
-    reps=int(request.form["reps"])  
+    reps = request.form.get("reps") or 0
+    reps = int(reps) 
     day=request.form["day"]
 
     if wid:
