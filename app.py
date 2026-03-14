@@ -183,6 +183,20 @@ def index():
     # バッジシステム
     member_badges = {}
 
+    # 世界登山モード（1回 = 1m）
+    mountains = [
+        {"name":"高尾山","height":599},
+        {"name":"筑波山","height":877},
+        {"name":"富士山","height":3776},
+        {"name":"マッターホルン","height":4478},
+        {"name":"キリマンジャロ","height":5895},        
+        {"name":"エベレスト","height":8848},
+        {"name":"成層圏","height":50000},
+        {"name":"宇宙","height":100000},
+        {"name":"月","height":384400},
+        {"name":"宇宙ステーション","height":408000}
+    ]
+
     for m in members:
 
         name = m[1]
@@ -219,6 +233,18 @@ def index():
 
         if streak >= 30:
             badges.append("🔥 30日ストリーク")
+        
+        # 山頂バッジ
+        passed_height = 0
+
+        for mt in mountains:
+
+            passed_height += mt["height"]
+
+            if total >= passed_height:
+                badges.append(f"⛰ {mt['name']} 登頂")
+            else:
+                break
 
         member_badges[name] = badges
 
@@ -234,9 +260,9 @@ def index():
         WHERE m.name=?
         """,(name,),one=True)
 
-        total = row[0] if row and row[0] else 0
+        total = int(row[0]) if row and row[0] else 0
 
-        level = total // 100
+        level = int(total // 100)
         next_level = (level + 1) * 100
 
         progress = int((total % 100) / 100 * 100)
@@ -262,19 +288,7 @@ def index():
             "title": title
         }
 
-        # 世界登山モード（1回 = 1m）
-        mountains = [
-            {"name":"高尾山","height":599},
-            {"name":"筑波山","height":877},
-            {"name":"富士山","height":3776},
-            {"name":"マッターホルン","height":4478},
-            {"name":"キリマンジャロ","height":5895},        
-            {"name":"エベレスト","height":8848},
-            {"name":"成層圏","height":50000},
-            {"name":"宇宙","height":100000},
-            {"name":"月","height":384400},
-            {"name":"宇宙ステーション","height":408000}
-        ]
+        
 
         mountain_progress = []
 
